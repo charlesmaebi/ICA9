@@ -1,5 +1,6 @@
 {-
 CS 381 — ICA 9 Template
+Name: Charles Aebi
 Expr2 with Either + Division
 
 IMPORTANT:
@@ -97,16 +98,29 @@ sem (Plus e1 e2) =
 -------------------------------------------------
 
 sem (Mult e1 e2) =
-  undefined
+  case (sem e1, sem e2) of
+    (Right (I i), Right (I j)) -> Right (I (i * j))
+    (Left err, _)              -> Left err
+    (_, Left err)              -> Left err
+    _ -> Left (TypeMismatch "Mult: expected Int * Int")
 
 sem (Neg e) =
-  undefined
+  case sem e of 
+    Right (I i) -> Right (I (-i))
+    Left err    -> Left err
+    _ -> Left (TypeMismatch "Neg: expected Int")
 
 sem (Equal e1 e2) =
-  undefined
+  case (sem e1, sem e2) of
+    (Right v1, Right v2) -> Right (B (v1 == v2))
+    (Left err, _)        -> Left err
+    (_, Left err)        -> Left err
 
 sem (Not e) =
-  undefined
+  case sem e of
+    Right (B b) -> Right (B (not b))
+    Left err    -> Left err
+    _ -> Left (TypeMismatch "Not: expected Bool")
 
 -------------------------------------------------
 -- DIV (NEW)
@@ -117,7 +131,12 @@ sem (Not e) =
 -- 3. Otherwise return integer division using `div`
 
 sem (Div e1 e2) =
-  undefined
+  case (sem e1, sem e2) of
+    (Right (I i), Right (I 0)) -> Left DivideByZero
+    (Right (I i), Right (I j)) -> Right (I (i `div` j))
+    (Left err, _)               -> Left err
+    (_, Left err)               -> Left err
+    _ -> Left (TypeMismatch "Div: expected Int / Int")
 
 -----------------------------
 -- Running a Program
@@ -143,17 +162,29 @@ runProg (e:es) =
 -- A program with at least three expressions (including one Div) 
 -- that evaluates successfully.
 progOK :: Prog
-progOK = undefined
+progOK = 
+  [ N 10
+  , Plus (N 3) (N 4)
+  , Div (N 20) (N 5)
+  ]
 
 -- A program with at least three expressions whose first failure 
 -- is the second expression and it produces Left DivideByZero.
 progZero :: Prog
-progZero = undefined
+progZero = 
+  [ N 7
+  , Div (N 5) (N 0)
+  , Plus (N 1) (N 2)
+  ]
 
 -- A program with at least three expressions whose first expression 
 -- is a failure that produces Left (TypeMismatch ...).
 progBad :: Prog
-progBad = undefined
+progBad = 
+  [ Plus (N 1) (Not (N 0))
+  , Div (N 10) (N 2)
+  , N 5
+  ]
 
 -----------------------------
 -- Optional Main (Helpful)
